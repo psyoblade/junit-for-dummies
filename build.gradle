@@ -1,0 +1,57 @@
+buildscript {
+    ext {
+        springBootVersion = '2.2.1.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+ext {
+    springBootVersion = '2.2.1.RELEASE'
+    lombokVersion = '1.16.20'
+}
+
+allprojects {
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:unchecked"
+        }
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'application'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+
+    group = 'me.suhyuk'
+    version = '0.0.1-SNAPSHOT'
+    sourceCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        testImplementation('org.springframework.boot:spring-boot-starter-test')
+        compileOnly('org.projectlombok:lombok')
+        annotationProcessor('org.projectlombok:lombok')
+        testCompileOnly('org.projectlombok:lombok')
+        testAnnotationProcessor('org.projectlombok:lombok')
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+project(':app') {
+}
+
+project(':web') {
+}
