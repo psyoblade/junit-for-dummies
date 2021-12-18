@@ -3,13 +3,20 @@
  */
 package me.suhyuk.junit;
 
+import me.suhyuk.junit.tags.FastTest;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumingThat;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class) // Underscore 를 빈 공백으로 치환
 class StudyTest {
@@ -49,6 +56,7 @@ class StudyTest {
         assertTrue(true);
     }
 
+    // ### 2-1. Java8 Supplier<String> 활용한 Assertion
     @Test @DisplayName("스터디 객체 상태 확인") void testNormalStudy() {
         Study study = Study.builder().studyStatus(StudyStatus.DRAFT).limit(10).build();
         assertNotNull(study);
@@ -67,6 +75,8 @@ class StudyTest {
         assertTrue(study.getLimit() > 0, "스터디 최대 참석 가능 인원은 0보다 커야 합니다");
     }
 
+    // ### 2-2. assertAll 구문을 통한 오류발생한 모든 테스트 결과 확인하기
+    @Tag("debug")
     @Test @DisplayName("스터디 객체 오류") void testAssertAll() {
         Study study = Study.builder().studyStatus(StudyStatus.STARTED).limit(-10).build();
         assertAll(
@@ -76,22 +86,118 @@ class StudyTest {
         );
     }
 
+    // ### 2-3. assertThrows 통한 예외 처리하기
+    @Tag("fast")
     @Test @DisplayName("스터디 예외 확인") void testThrowable() {
         Study.StudyBuilder studyBuilder = Study.builder().studyStatus(StudyStatus.STARTED).limit(101);
         IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () -> studyBuilder.build());
         assertEquals(Study.ERR_LIMIT, iae.getMessage());
     }
 
+
+    // ### 2-4. assertTimeout 통한 타임 예외 처리
     // TODO 스프링 Transaction 경우 ThreadLocal 을 사용하기 때문에, 외부 공유가 불가능한 경우가 있으므로 예상치 못한 상황이 발생할 수 있습니다
+    @Tag("debug")
     @Test @DisplayName("스터디 타임아웃") void testTimeout() throws InterruptedException {
         Study study = Study.builder().studyStatus(StudyStatus.DRAFT).limit(10).build();
         assertTimeout(Duration.ofMillis(100), () -> study.sleep(50));
         assertTimeoutPreemptively(Duration.ofMillis(100), () -> study.sleep(5000));
     }
 
+    // ### 2-5. assertMatcher 통한 비교
     @Test @DisplayName("다른 방식으로 검증") void testMatcher() {
         Study study = Study.builder().studyStatus(StudyStatus.DRAFT).limit(10).build();
         assertThat(study.getLimit()).isGreaterThan(0);
+    }
+
+    // ### 2-6. assumeTrue 조건에 따른 테스트
+    @Test @DisplayName("조건에 따른 테스트 수행") void testAssumeTrue() {
+        String debug = System.getenv("DEBUG");
+        System.out.println("debug = " + debug);
+        assumeTrue("True".equalsIgnoreCase(debug));
+        // 아래의 경우는 초기 상태가 DRAFT 이므로 오류가 발생하지만
+        Study study = Study.builder().studyStatus(StudyStatus.STARTED).limit(-10).build();
+        assertTrue(StudyStatus.DRAFT == study.getStudyStatus());
+    }
+
+    @Test @DisplayName("다양한 조건에 따른 테스트 수행") void testAssumingThat() {
+        String debug = System.getenv("DEBUG");
+        System.out.println("debug = " + debug);
+
+        assumingThat("true".equalsIgnoreCase(debug), () -> {
+            System.out.println("디버깅 환경변수가 true 인 경우에 테스트 수행");
+        });
+
+        assumingThat("false".equalsIgnoreCase(debug), () -> {
+            System.out.println("디버깅 환경변수가 false 인 경우에 테스트 수행");
+        });
+
+        assumingThat(debug == null, () -> {
+            System.out.println("디버깅 환경변수가 설정되지 않은 경우에 테스트 수행");
+        });
+    }
+
+    @EnabledOnOs({OS.MAC, OS.LINUX})
+    @Test @DisplayName("어노테이션에 따른 테스트 수행") void testEnabledOs() {
+        System.out.println("맥과 리눅스에서만 수행되는 단위 테스트 입니다");
+    }
+
+    @EnabledOnJre({JRE.JAVA_9})
+    @Test @DisplayName("특정 자바 런터임에서만 테스트 수행") void testEnabledJre9() {
+        // 단, 단위테스트를 직접 실행하는 경우는 동작합니다
+        System.out.println("자바9 환경에서만 수행되는 테스트입니다");
+    }
+
+    @EnabledIfEnvironmentVariable(named = "DEBUG", matches = "true")
+    @Test @DisplayName("환경 변수를 어노테이션으로 지정하여 테스트 수행") void testAnnotatedEnv() {
+        System.out.println("환경변수 DEBUG 가 true 인 경우에만 수행되는 테스트입니다");
+    }
+
+    // ### 2-7. @Tag 통하여 수행 조건을 지정하여 수행하는 테스트
+    @Tag("fast")
+    @Test @DisplayName("태그 fast 작업") void testFast() {
+        System.out.println("수행시간이 짧아서 로컬에서 실행하는 테스트");
+        assertTrue(true);
+    }
+
+    @Tag("slow")
+    @Test @DisplayName("태그 slow 작업") void testSlow() throws InterruptedException {
+        System.out.println("수행시간이 길어서 로컬에서 실행하지 않는 테스트");
+        Thread.sleep(5000);
+        assertTrue(true);
+    }
+
+    // ### 2-8. 커스텀 어노테이션 태그
+    @FastTest
+    @DisplayName("커스텀 어노테이션 테스트") void testCustomAnnotation() {
+        System.out.println("@Test, @Tag 를 메타 어노테이션으로 활용한 커스텀 어노테이션");
+        assertTrue(true);
+    }
+
+    // ### 2-9. 테스트 반복하기
+    @DisplayName("반복적인 테스트")
+    @RepeatedTest(value = 10, name = RepeatedTest.LONG_DISPLAY_NAME)
+    void testRepeatedTest() {
+        System.out.println("반복 테스트");
+        assertTrue(true);
+    }
+
+    @DisplayName("반복적인 테스트")
+    @RepeatedTest(value = 10, name = "{displayName}, {currentRepetition}/{totalRepetitions}")
+    void testRepeatedWithCustomName(RepetitionInfo repetitionInfo) {
+        System.out.println("repetitionInfo = " + repetitionInfo.getCurrentRepetition() + "/" +
+                repetitionInfo.getTotalRepetitions());
+        assertTrue(true);
+    }
+
+    @DisplayName("파라메터 테스트")
+    @ParameterizedTest(name = "[{index}] - {displayName} message = '{0}'")
+    @ValueSource(strings = {
+            "파라메터를", "직접", "입력하여", "반복할", "수", "있습니다"
+    })
+    void testRepeatedWithParameters(String word) {
+        System.out.println("word = " + word);
+        assertTrue(true);
     }
 
 }

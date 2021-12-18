@@ -4,6 +4,7 @@
 > JUnit5는 JUnit4 코드에 대해 하위호환성을 제공하므로, 기존 코드 마이그레이션은 굳이 필요 없습니다
 
 ## 1. JUnit5 소개
+* [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/)
 * 컴포넌트 소개
   - Jupiter : Junit 플랫폼이 제공하는 JUnit5 구현체
   - Vintage : JUnit3~4를 지원하는 구현체
@@ -80,4 +81,82 @@
   assertThat(study.getLimit()).isGreaterThan(0);
 ```
 
-## 3
+### 2-6. assumeTrue 조건에 따른 테스트
+```java
+  @Test @DisplayName("조건에 따른 테스트 수행") void testAssumeTrue() {
+    String debug = System.getenv("DEBUG");
+    System.out.println("debug = " + debug);
+    assumeTrue("True".equalsIgnoreCase(debug));
+    // 아래의 경우는 초기 상태가 DRAFT 이므로 오류가 발생하지만 환경 변수 DEBUG=true 인 경우만 수행됩니다
+    Study study = Study.builder().studyStatus(StudyStatus.STARTED).limit(-10).build();
+    assertTrue(StudyStatus.DRAFT == study.getStudyStatus());
+  }
+
+```
+
+### 2-7. [@Tag](https://junit.org/junit5/docs/current/user-guide/#running-tests-tags) 통하여 수행 조건을 지정하여 수행하는 테스트
+```java
+  @Tag("fast")
+  @Test @DisplayName("태그 fast 작업") void testFast() {
+    System.out.println("수행시간이 짧아서 로컬에서 실행하는 테스트");
+    assertTrue(true);
+  }
+
+  @Tag("slow")
+  @Test @DisplayName("태그 slow 작업") void testSlow() {
+    System.out.println("수행시간이 길어서 로컬에서 실행하지 않는 테스트");
+    assertTrue(true);
+  }
+```
+```yaml
+subprojects {
+  ...
+  test {
+    useJUnitPlatform {
+      excludeTags 'debug'
+    }
+  }
+
+  task fastTest(type: Test) {
+    useJUnitPlatform {
+      includeTags 'fast'
+    }
+  }
+
+  task slowTest(type: Test) {
+    useJUnitPlatform {
+      includeTags 'slow'
+    }
+  }
+}
+```
+```bash
+./gradlew test
+./gradlew test fastTest
+./gradlew test slowTest
+```
+
+### 2-8. 커스텀 어노테이션 태그
+> @Test, @Tag("fast") 등의 여러 어노테이션을 메타 어노테이션으로 활용하여 컴포즈 어노테이션을 생성합니다
+```java
+@Target(ElementType.METHOD) // 어디에 쓸 수 있는가 - 메소드
+@Retention(RetentionPolicy.RUNTIME) // 이 어노테이션이 런타임시에도 유지되어야 함
+@Test // 테스트 어노테이션으로 사용할 것이며
+@Tag("fast") // 메타 태그를 fast 등록합니다
+public @interface FastTest { // FastTest 어노테이션은 @Test 와 @Tag 2개를 메타 어노테이션으로 사용하여 컴포즈 어노테이션을 생성할 수 있다
+}
+```
+
+### 2-9. 테스트 반복하기
+> [Repeated Tests](https://www.baeldung.com/junit-5-repeated-test), [Parameterized Tests](https://www.baeldung.com/parameterized-tests-junit-5)
+```java
+  @DisplayName("파라메터 테스트")
+  @ParameterizedTest(name = "[{index}] - {displayName} message = '{0}'")
+  @ValueSource(strings = {
+        "파라메터를", "직접", "입력하여", "반복할", "수", "있습니다"
+  })
+  void testRepeatedWithParameters(String word) {
+    System.out.println("word = " + word);
+    assertTrue(true);
+  }
+```
