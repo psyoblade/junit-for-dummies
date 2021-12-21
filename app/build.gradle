@@ -4,6 +4,6 @@ application {
 
 dependencies {
     implementation('com.google.guava:guava:28.0-jre')
-    implementation('org.springframework.boot:')
+    implementation('org.springframework.boot:spring-boot-starter-data-jpa')
 }
 

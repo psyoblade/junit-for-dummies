@@ -192,6 +192,48 @@ public @interface FastTest { // FastTest 어노테이션은 @Test 와 @Tag 2개�
 > 'org.mockito:mockito-core:3.1.0' : 코어 라이브러리
 > 'org.mockito:mockito-junit-jupiter:3.1.0' : JUnit 테스트에서 Mockito 를 사용할 수 있도록 하는 확장 라이브러리
 
-* Mock 만드는 방법
-* Mock 동작 방법
-* Mock 행동 검증
+* [Lombok @NonNull](https://projectlombok.org/features/NonNull) 은 `@NotNull`은 Documentation 이며, 하일라이트를 해주는 효과
+* Lombok 의 `@NonNull` 을 사용해야 NullPointerException 을 던져줍니다
+
+```java
+@ExtendWith(MockitoExtension.class) // @Mock 객체를 자동 생성하기 위해 반드시 명시해야 합니다
+class MockitoServiceTest {
+  @Mock MemberService memberService;
+  @Mock MakerRepository makerRepository;
+  @Test
+  @DisplayName("어노테이션을 이용한 모키토")
+  void testCreateServiceUsingMockitoAnnotation() {
+    MakerService makerService = new MakerService(memberService, makerRepository);
+    assertNotNull(makerService);
+  }
+}
+```
+
+### 3-3. 행동 조작하기 (Stubbing)
+* Mock 객체의 행동 (implements 코드 자동 생성되었을 때의 상태)
+  - 일반 타입은 null, Optional 경우는 Optional.empty 반환 
+  - void 메소드는 예외도 던지지 않고 아무일도 일어나지 않음
+  - Primitive 타입은 기본 Primitive 값
+  - 콜렉션은 비어있는 콜렉션
+
+> JUnit5 기본 설정이 엄격한 단위 테스트이며, when...thenReturn 절을 선언하고 사용하지 않으면 [UnnecessaryStubbingException](https://www.baeldung.com/mockito-unnecessary-stubbing-exception) 가 떨어진다
+> 하여 반드시 사용하는 행동만 정의하되, 만일 애매하다면 Mockito.lenient() 호출하고, when...thenReturn 절을 사용하면 됩니다
+```java
+@ExtendWith(MockitoExtension.class)
+class MakerServiceTest {
+
+  @Test
+  @DisplayName("엄격한 vs 유연한 테스트")
+  void testLenientAndStrict(@Mock Foo foo) {
+    Mockito.lenient()
+            .when(foo.getInt())
+            .thenReturn(10);
+    assertFalse(foo.getBoolean());
+    // lenient 경우는 사용하지 않아도 오류가 없으나
+
+    when(foo.getInt()).thenReturn(10);
+    assertFalse(foo.getBoolean());
+    // when 에서 선언하고 사용하지 않으면 UnnecessaryStubbingException 이 발생하게 됩니다
+  }
+}
+```
