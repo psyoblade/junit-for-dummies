@@ -6,9 +6,16 @@ package me.suhyuk.junit;
 import me.suhyuk.junit.tags.FastTest;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.*;
+import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.aggregator.AggregateWith;
+import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
+import org.junit.jupiter.params.aggregator.ArgumentsAggregationException;
+import org.junit.jupiter.params.aggregator.ArgumentsAggregator;
+import org.junit.jupiter.params.converter.ArgumentConversionException;
+import org.junit.jupiter.params.converter.ConvertWith;
+import org.junit.jupiter.params.converter.SimpleArgumentConverter;
+import org.junit.jupiter.params.provider.*;
 
 import java.time.Duration;
 import java.util.function.Supplier;
@@ -195,9 +202,57 @@ class StudyTest {
     @ValueSource(strings = {
             "파라메터를", "직접", "입력하여", "반복할", "수", "있습니다"
     })
+    @NullAndEmptySource
     void testRepeatedWithParameters(String word) {
         System.out.println("word = " + word);
         assertTrue(true);
     }
 
+    @ParameterizedTest
+    @DisplayName("다수의 파라메터 테스트")
+    @CsvSource({"10", "20", "30", "40"})
+    void testValueSourceWithArgumentConverter(@ConvertWith(CarConverter.class) Car car) {
+        System.out.println("car = " + car.toString());
+    }
+
+    // 하나의 인자를 받는 경우에 ArgumentConvert
+    static class CarConverter extends SimpleArgumentConverter {
+        @Override
+        protected Object convert(Object source, Class<?> targetType) throws ArgumentConversionException {
+            assertEquals(Car.class, targetType, "Car 타입만 변환이 가능합니다");
+            return Car.builder().speed(Integer.parseInt(source.toString())).build();
+        }
+    }
+
+    @ParameterizedTest
+    @DisplayName("다수의 파라메터와 다수의 인자 테스트")
+    @CsvSource({"'박수혁', 10", "'김영미', 20", "'박소원', 30", "'박시훈', 40"})
+    void testCsvSourceWithMultipleArguments(String name, Integer age) {
+        System.out.println("maker = " + Maker.builder().name(name).age(age).build());
+    }
+
+    @ParameterizedTest
+    @DisplayName("다수의 파라메터와 다수의 인자 애그리게이터를 통한 테스트")
+    @CsvSource({"'박수혁', 10", "'김영미', 20", "'박소원', 30", "'박시훈', 40"})
+    void testCsvSourceWithMultipleArgumentsAccessor(ArgumentsAccessor accessor) {
+        // 인자의 순서를 index 값에 넣고, 타입은 getType 형식으로 지정합니다
+        Maker maker = Maker.builder().name(accessor.getString(0)).age(accessor.getInteger(1)).build();
+        System.out.println("maker = " + maker);
+    }
+
+    @ParameterizedTest
+    @DisplayName("다수의 파라메터와 다수의 인자 컨버터를 통한 테스트")
+    @CsvSource({"'박수혁', 10", "'김영미', 20", "'박소원', 30", "'박시훈', 40"})
+    void testCsvSourceWithMultipleArgumentsConverter(@AggregateWith(MakerConverter.class) Maker maker) {
+        System.out.println("maker = " + maker);
+    }
+
+    // 두 개 이상 인자를 사용하는 경우 ArgumentAggregator
+    static class MakerConverter implements ArgumentsAggregator {
+
+        @Override
+        public Object aggregateArguments(ArgumentsAccessor accessor, ParameterContext context) throws ArgumentsAggregationException {
+            return Maker.builder().name(accessor.getString(0)).age(accessor.getInteger(1)).build();
+        }
+    }
 }

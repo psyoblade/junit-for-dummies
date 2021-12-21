@@ -155,8 +155,43 @@ public @interface FastTest { // FastTest 어노테이션은 @Test 와 @Tag 2개�
   @ValueSource(strings = {
         "파라메터를", "직접", "입력하여", "반복할", "수", "있습니다"
   })
+  @NullAndEmptySource
   void testRepeatedWithParameters(String word) {
     System.out.println("word = " + word);
     assertTrue(true);
   }
 ```
+
+> [Argument Conversion](https://junit.org/junit5/docs/current/user-guide/#writing-tests-parameterized-tests-argument-conversion) 참고
+```java
+  @ParameterizedTest
+  @DisplayName("다수의 파라메터와 다수의 인자 테스트")
+  @CsvSource({"'박수혁', 10", "'김영미', 20", "'박소원', 30", "'박시훈', 40"})
+  void testCsvSourceWithMultipleArguments(String name, Integer age) {
+    System.out.println("maker = " + Maker.builder().name(name).age(age).build());
+  }
+```
+
+
+## 3. Mockito
+> Mock: 진짜 객체와 비슷하게 동작하지만 프로그래머가 그 객체의 행동을 관리하는 객체
+> Mockito : Mock 객체를 쉽게 만들고 관리하고 검증할 수 있는 방법을 제공합니다
+> 데이터베이스 혹은 외부 API 연동을 하는 경우 내부 구현을 모르고, 단위 테스트 수준에서 연동하는 것은 번거로운 일이므로, 이럴 때에 활용합니다
+
+### 3-1. 단위 테스트
+> [UnitTest](https://martinfowler.com/bliki/UnitTest.html) 모든 객체를 Mock 객체로 만들어야 할 필요는 없다.
+> 단위를 생각할 때에 메소드 하나가 아니라 행동의 단위를 하나의 기준으로 볼 수도 있다 (동료와 협의를 통해 컨센서스를 맞추면 좋다)
+> 특히 외부 서비스 혹은 라이브러리를 이용하는 경우에만 Mock 을 적용하겠다 등으로 정의해도 좋을 것 같다 (Bango.com 같은 테스트 서버도 있다)
+
+* 예를 들어 하나의 컨틀로러와 서비스를 내가 구현했고, 이를 하나의 행위로 본다고 하면, 나머지 객체들은 연관되어 동작하므로, Controller 만 테스트해도 좋다
+  - 팀 내에 이러한 기준에 대한 협의가 있어서 기준을 정해두면 좋겠다
+  - AdminClient 와 같이 개발 업무 R&R 이 다른 경우라면 별도로 단위 테스트를 가져가는 것이 좋을 수도 있다.
+
+### 3-2. 시작하기
+> 기본적으로 spring-boot-starter-test 패키지에 의존성이 포함되어 있으나
+> 'org.mockito:mockito-core:3.1.0' : 코어 라이브러리
+> 'org.mockito:mockito-junit-jupiter:3.1.0' : JUnit 테스트에서 Mockito 를 사용할 수 있도록 하는 확장 라이브러리
+
+* Mock 만드는 방법
+* Mock 동작 방법
+* Mock 행동 검증
