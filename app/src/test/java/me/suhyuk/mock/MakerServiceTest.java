@@ -4,6 +4,11 @@ import me.suhyuk.junit.Maker;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ArgumentConversionException;
+import org.junit.jupiter.params.converter.ConvertWith;
+import org.junit.jupiter.params.converter.SimpleArgumentConverter;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.exceptions.misusing.UnnecessaryStubbingException;
@@ -18,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +37,6 @@ class MakerServiceTest {
         MemberService memberService = new MemberService() {
             @Override
             public void validate(Long memberId) throws InvalidMemberException {
-
             }
 
             @Override
@@ -236,6 +240,21 @@ class MakerServiceTest {
         Member other = Member.builder().name("미입사자").build();
         Member member1 = memberService.findById(1L).orElse(other);
         assertEquals(other.getName(), member1.getName());
+    }
+
+    @ParameterizedTest
+    @DisplayName("인자 매칭을 이용한 목킹")
+    @ValueSource(longs = {1L, 2L, 3L, 4L}) // 반드시 @ParameterizedTest 가 있어야 하고 첫번째 인자로만 전달됩니다
+    void testMockAnyObject(long id) throws MemberNotFoundException {
+        when(memberService.findById(anyLong())).thenReturn(Optional.of(Member.builder().name("아무개").build()));
+        assertEquals("아무개", memberService.findById(id).get().getName());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-1L, -2L})
+    @DisplayName("예외를 던지는 모키토")
+    void testMockThrowException(long id) throws MemberNotFoundException {
+        assertThrows(IllegalArgumentException.class, () -> memberService.findById(id));
     }
 
 }

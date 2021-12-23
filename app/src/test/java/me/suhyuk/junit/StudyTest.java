@@ -249,7 +249,6 @@ class StudyTest {
 
     // 두 개 이상 인자를 사용하는 경우 ArgumentAggregator
     static class MakerConverter implements ArgumentsAggregator {
-
         @Override
         public Object aggregateArguments(ArgumentsAccessor accessor, ParameterContext context) throws ArgumentsAggregationException {
             return Maker.builder().name(accessor.getString(0)).age(accessor.getInteger(1)).build();
