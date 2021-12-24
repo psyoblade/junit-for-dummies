@@ -239,3 +239,20 @@ class MakerServiceTest {
 ```
 
 ### 3-4. 
+
+## 4. 서비스 설계
+
+```bash
+- domain
+  - Member : 스터디 참여자
+  - Study : 스터디 정보
+  - StudyStatus : 스터디 상태 (Ready, Running, Completed)
+- member
+  - MemberService : 멤버 관리 인터페이스 - 예제에서는 Repository 구성은 제외합니다
+    - findById, validate, notify
+- study
+  - StudyController : 스터디 생성 엔드포인트
+  - StudyService : 스터디 생성 서비스
+    - createNewStudy, openStudy
+  - StudyRepository : 스터디 저장 레포지토리 (CrudRepository)
+```

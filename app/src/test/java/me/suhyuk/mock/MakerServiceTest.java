@@ -5,27 +5,23 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.converter.ArgumentConversionException;
-import org.junit.jupiter.params.converter.ConvertWith;
-import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.exceptions.misusing.UnnecessaryStubbingException;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import java.awt.*;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class) // @Mock 객체를 자동 생성하기 위해 반드시 명시해야 합니다
 class MakerServiceTest {
@@ -255,6 +251,131 @@ class MakerServiceTest {
     @DisplayName("예외를 던지는 모키토")
     void testMockThrowException(long id) throws MemberNotFoundException {
         assertThrows(IllegalArgumentException.class, () -> memberService.findById(id));
+    }
+
+    @Test
+    @DisplayName("아규먼트 매처를 활용한 리스트 갯수 확인")
+    void testArgumentMatcher() {
+        LinkedList mockedList = Mockito.mock(LinkedList.class);
+        when(mockedList.get(anyInt())).thenReturn("first");
+        verify(mockedList).add(argThat(someString -> someString.toString().length() > 2));
+    }
+
+    @Test
+    @DisplayName("수행한 작업들을 확인합니다")
+    void testVerifyMockedList() {
+        // 인터페이스가 아니라 실제 객체를 목킹합니다
+        List mockedList = mock(List.class);
+        // 한 번 아래와 같이 명령이 수행된 것을 기억하고 있다가
+        mockedList.add("one");
+        mockedList.clear();
+        // 수행여부를 확인합니다
+        verify(mockedList).add("one");
+        verify(mockedList).clear();
+    }
+
+    @Test
+    @DisplayName("리스트 스터빙 하고, 검증하기")
+    void testStubbingLinkedList() {
+        LinkedList mockedList = mock(LinkedList.class);
+        // 스터빙(stubbing): 미리 준비된 답변을 제공하는 행위
+        when(mockedList.get(0)).thenReturn("first");
+        when(mockedList.get(1)).thenThrow(new RuntimeException());
+        // 객체 반환을 확인 - 스터빙 하지 않은 경우는 널을 반환합니다
+        assertEquals("first", mockedList.get(0));
+        assertThrows(RuntimeException.class, () -> mockedList.get(1));
+        assertNull(mockedList.get(999));
+        // 마지막으로 수행된 작업을 검증합니다
+        verify(mockedList).get(0);
+    }
+
+    boolean isValid(Object arg) {
+        String str = arg.toString();
+        return str != null && !str.isEmpty();
+    }
+
+    @Test
+    @DisplayName("인자 매처를 통한 목킹")
+    void testArgumentMatchers() {
+        LinkedList mockedList = mock(LinkedList.class);
+        // 임의의 정수값에 대한 목킹 테스트
+        when(mockedList.get(anyInt())).thenReturn("element");
+        assertEquals("element", mockedList.get(0));
+        // 임의의 매칭함수를 이용하여 검증하는 방법
+        when(mockedList.contains(argThat(o -> isValid(o)))).thenReturn(true);
+        assertTrue(mockedList.contains(anyInt()));
+        assertThrows(NullPointerException.class, () -> mockedList.contains(null));
+        // 수행한 내역을 검증합니다
+        verify(mockedList).get(anyInt());
+        verify(mockedList).contains(anyInt());
+        // 람다 매칭함수를 이용한 검증 방법
+        mockedList.add("123456789");
+        verify(mockedList).add(argThat(o -> o.toString().length() > 8));
+    }
+
+    @Test
+    @DisplayName("호출 횟수를 검증")
+    void testVerifyExactNumberOfInvocations() {
+        LinkedList mockedList = mock(LinkedList.class);
+        mockedList.add("once");
+        mockedList.add("twice");
+        mockedList.add("twice");
+        mockedList.add("three times");
+        mockedList.add("three times");
+        mockedList.add("three times");
+
+        verify(mockedList).add("once");
+        verify(mockedList, times(1)).add("once");
+        verify(mockedList, times(2)).add("twice");
+        verify(mockedList, times(3)).add("three times");
+        verify(mockedList, never()).add("never happend");
+
+        verify(mockedList, atMostOnce()).add("once");
+        verify(mockedList, atLeastOnce()).add("three times");
+        verify(mockedList, atLeast(2)).add("three times");
+        verify(mockedList, atMost(3)).add("three times");
+    }
+
+    @Test
+    @DisplayName("호출된 메소드/목객체 순서를 검증")
+    void testVerifyInOrder() {
+        List singleMock = mock(List.class);
+        singleMock.add("was added first");
+        singleMock.add("was added second");
+
+        InOrder inOrder = inOrder(singleMock);
+        inOrder.verify(singleMock).add("was added first");
+        inOrder.verify(singleMock).add("was added second");
+
+        List firstMock = mock(List.class);
+        List secondMock = mock(List.class);
+        firstMock.add("was called first");
+        secondMock.add("was called second");
+
+        InOrder inOrders = inOrder(firstMock, secondMock);
+        inOrders.verify(firstMock).add("was called first");
+        inOrders.verify(secondMock).add("was called second");
+    }
+
+    @Test
+    @DisplayName("예외를 던지는 목객체")
+    void testThrowException(@Mock MemberService memberService) throws InvalidMemberException {
+        doThrow(new InvalidMemberException("오류멤버")).when(memberService).validate(0L);
+        assertThrows(InvalidMemberException.class, () -> memberService.validate(0L));
+        // 0L 에 대해서만 예외를 호출하도록 스터빙하고, 다른 값은 아무런 동작도 하지 않습니다
+        memberService.validate(1L);
+    }
+
+    @Test
+    @DisplayName("순차적인 반환값 스터빙")
+    void testConsecutiveCalls() {
+        List mockList = mock(List.class);
+        when(mockList.add(0))
+                .thenThrow(new IllegalArgumentException(""))
+                .thenReturn(true);
+        // 처음 호출은 예외를 던지고, 두 번째는 성공하는 스터빙
+        assertThrows(IllegalArgumentException.class, () -> mockList.add(0));
+        assertTrue(mockList.add(0));
     }
 
 }
