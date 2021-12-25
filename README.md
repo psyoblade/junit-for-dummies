@@ -162,6 +162,8 @@ public @interface FastTest { // FastTest 어노테이션은 @Test 와 @Tag 2개�
   }
 ```
 
+### 2-10. 다수의 파라메터와 다수의 인자 테스트
+
 > [Argument Conversion](https://junit.org/junit5/docs/current/user-guide/#writing-tests-parameterized-tests-argument-conversion) 참고
 ```java
   @ParameterizedTest
@@ -195,64 +197,209 @@ public @interface FastTest { // FastTest 어노테이션은 @Test 와 @Tag 2개�
 * [Lombok @NonNull](https://projectlombok.org/features/NonNull) 은 `@NotNull`은 Documentation 이며, 하일라이트를 해주는 효과
 * Lombok 의 `@NonNull` 을 사용해야 NullPointerException 을 던져줍니다
 
+### 3-3. 목키토가 하는 일을 굳이 내가 해보기
+> 아래와 같이 인터페이스만 가진 객체에 대해서 빈 껍질을 구현해서 객체를 만드는 과정을 Mockito 가 대신 해준다고 보면 됩니다
+
+* 현재 모든 서비스는 인터페이스만 존재하기 때문에 모든 구현체가 없다면 수행이 불가능합니다
 ```java
-@ExtendWith(MockitoExtension.class) // @Mock 객체를 자동 생성하기 위해 반드시 명시해야 합니다
-class MockitoServiceTest {
-  @Mock MemberService memberService;
-  @Mock MakerRepository makerRepository;
-  @Test
-  @DisplayName("어노테이션을 이용한 모키토")
-  void testCreateServiceUsingMockitoAnnotation() {
-    MakerService makerService = new MakerService(memberService, makerRepository);
-    assertNotNull(makerService);
+@Test
+@DisplayName("Mockito 가 하는 일을 굳이 내가 해보기")
+  void createMakerService() {
+    MemberService memberService = new MemberService() {
+      @Override
+      public void validate(Long memberId) throws InvalidMemberException {
+        }
+      @Override
+      public Optional<Member> findById(Long memberId) throws MemberNotFoundException {
+        return Optional.empty();
+      }
+    };
   }
-}
 ```
 
-### 3-3. 행동 조작하기 (Stubbing)
+### 3-4. 모키토 mock 함수를 이용한 모키토 객체 생성
+```java
+    @Test
+    @DisplayName("모키토를 써서 객체 생성해보기")
+    void testCreateServiceUsingMockito() {
+        MemberService memberService = Mockito.mock(MemberService.class);
+        MakerRepository makerRepository = Mockito.mock(MakerRepository.class);
+        MakerService makerService = new MakerService(memberService, makerRepository);
+        assertNotNull(makerService);
+    }
+```
+
+### 3-5. 모키토 어노테이션을 사용하는 방법 - 클래스 전역적으로 사용하는 경우
+> 단순히 @Mock 은 선언만 하지 생성은 해주지 않습니다 - `@ExtendWith(MockitoExtension.class)`
+```java
+    @Mock MemberService memberService;
+    @Mock MakerRepository makerRepository;
+    @Test
+    @DisplayName("어노테이션을 이용한 모키토")
+    void testCreateServiceUsingMockitoAnnotation() {
+        MakerService makerService = new MakerService(memberService, makerRepository);
+        assertNotNull(makerService);
+    }
+```
+
+### 3-6. 모키노 인자로 전달받고 싶은 경우
+```java
+    @Test
+    @DisplayName("인자로 어노테이션 객체를 받는 경우")
+    void testCreateServiceUsingParameterAnnotation(@Mock MemberService memberService,
+                                                   @Mock MakerRepository makerRepository) {
+        MakerService makerService = new MakerService(memberService, makerRepository);
+        assertNotNull(makerService);
+    }
+```
+
+### 3-7. 목객체의 동작과 `lenient` 키워드 사용법 
+> JUnit5 기본 설정이 엄격한 단위 테스트이며, when...thenReturn 절을 선언하고 사용하지 않으면 [UnnecessaryStubbingException](https://www.baeldung.com/mockito-unnecessary-stubbing-exception) 가 떨어진다
+> 하여 반드시 사용하는 행동만 정의하되, 만일 애매하다면 Mockito.lenient() 호출하고, when...thenReturn 절을 사용하면 됩니다
+
 * Mock 객체의 행동 (implements 코드 자동 생성되었을 때의 상태)
-  - 일반 타입은 null, Optional 경우는 Optional.empty 반환 
+  - 일반 타입은 null, Optional 경우는 Optional.empty 반환
   - void 메소드는 예외도 던지지 않고 아무일도 일어나지 않음
   - Primitive 타입은 기본 Primitive 값
   - 콜렉션은 비어있는 콜렉션
-
-> JUnit5 기본 설정이 엄격한 단위 테스트이며, when...thenReturn 절을 선언하고 사용하지 않으면 [UnnecessaryStubbingException](https://www.baeldung.com/mockito-unnecessary-stubbing-exception) 가 떨어진다
-> 하여 반드시 사용하는 행동만 정의하되, 만일 애매하다면 Mockito.lenient() 호출하고, when...thenReturn 절을 사용하면 됩니다
 ```java
-@ExtendWith(MockitoExtension.class)
-class MakerServiceTest {
+    @Test
+    @DisplayName("엄격한 vs 유연한 테스트")
+    void testLenientAndStrict(@Mock Foo foo) {
+        Mockito.lenient()
+                .when(foo.getInt())
+                .thenReturn(10);
+        assertFalse(foo.getBoolean());
+        // lenient 경우는 사용하지 않아도 오류가 없으나
 
-  @Test
-  @DisplayName("엄격한 vs 유연한 테스트")
-  void testLenientAndStrict(@Mock Foo foo) {
-    Mockito.lenient()
-            .when(foo.getInt())
-            .thenReturn(10);
-    assertFalse(foo.getBoolean());
-    // lenient 경우는 사용하지 않아도 오류가 없으나
-
-    when(foo.getInt()).thenReturn(10);
-    assertFalse(foo.getBoolean());
-    // when 에서 선언하고 사용하지 않으면 UnnecessaryStubbingException 이 발생하게 됩니다
-  }
-}
+        when(foo.getInt()).thenReturn(10);
+        assertFalse(foo.getBoolean());
+        // when 에서 선언하고 사용하지 않으면 UnnecessaryStubbingException 이 발생하게 됩니다
+    }
 ```
 
-### 3-4. 
-
-## 4. 서비스 설계
-
-```bash
-- domain
-  - Member : 스터디 참여자
-  - Study : 스터디 정보
-  - StudyStatus : 스터디 상태 (Ready, Running, Completed)
-- member
-  - MemberService : 멤버 관리 인터페이스 - 예제에서는 Repository 구성은 제외합니다
-    - findById, validate, notify
-- study
-  - StudyController : 스터디 생성 엔드포인트
-  - StudyService : 스터디 생성 서비스
-    - createNewStudy, openStudy
-  - StudyRepository : 스터디 저장 레포지토리 (CrudRepository)
+### 3-8. 행동 조작하기 (Stubbing)
+```java
+    @Test
+    @DisplayName("모키토 객체의 행동읠 정의하는 방법")
+    void testMockAction() throws MemberNotFoundException {
+    Member oldMember = Member.builder().name("예전이름").build();
+    Maker oldMaker = Maker.builder().name("박수혁").age(10).build();
+    Mockito.lenient() // Loosely stubbing jupiter 이전 버전 stubbing default 값을 사용합니다
+    .when(memberService.findById(any(Long.class)))
+    .thenReturn(Optional.ofNullable(oldMember));
+    Mockito.lenient() // Strict stubbing default 값을 사용합니다
+    .when(makerRepository.save(any(Maker.class)))
+    .thenReturn(oldMaker);
+    MakerService makerService = new MakerService(memberService, makerRepository);
+    Long memberId = 1L;
+    Maker newMaker = makerService.createNewMaker(memberId, oldMaker);
+    assertEquals(oldMaker.getName(), newMaker.getName());
+    }
 ```
+
+### 3-9. 예외를 다루는 방법
+```java
+    @ParameterizedTest
+    @ValueSource(longs = {-1L, -2L})
+    @DisplayName("예외를 던지는 모키토")
+    void testMockThrowException(long id) throws MemberNotFoundException {
+        assertThrows(IllegalArgumentException.class, () -> memberService.findById(id));
+    }
+```
+
+### 3-10. 인자 매칭을 통한 검증
+```java
+    @Test
+    @DisplayName("아규먼트 매처를 활용한 리스트 갯수 확인")
+    void testArgumentMatcher() {
+        LinkedList mockedList = Mockito.mock(LinkedList.class);
+        when(mockedList.get(anyInt())).thenReturn("first");
+        verify(mockedList).add(argThat(someString -> someString.toString().length() > 2));
+    }
+```
+
+### 3-11. 작업 내역을 검증
+```java
+    @Test
+    @DisplayName("수행한 작업들을 확인합니다")
+    void testVerifyMockedList() {
+        // 인터페이스가 아니라 실제 객체를 목킹합니다
+        List mockedList = mock(List.class);
+        // 한 번 아래와 같이 명령이 수행된 것을 기억하고 있다가
+        mockedList.add("one");
+        mockedList.clear();
+        // 수행여부를 확인합니다
+        verify(mockedList).add("one");
+        verify(mockedList).clear();
+    }
+```
+
+### 3-12. 호출 횟수를 검증 
+```java
+    @Test
+    @DisplayName("호출 횟수를 검증")
+    void testVerifyExactNumberOfInvocations() {
+        LinkedList mockedList = mock(LinkedList.class);
+        mockedList.add("once");
+        mockedList.add("twice");
+        mockedList.add("twice");
+        mockedList.add("three times");
+        mockedList.add("three times");
+        mockedList.add("three times");
+
+        verify(mockedList).add("once");
+        verify(mockedList, times(1)).add("once");
+        verify(mockedList, times(2)).add("twice");
+        verify(mockedList, times(3)).add("three times");
+        verify(mockedList, never()).add("never happend");
+
+        verify(mockedList, atMostOnce()).add("once");
+        verify(mockedList, atLeastOnce()).add("three times");
+        verify(mockedList, atLeast(2)).add("three times");
+        verify(mockedList, atMost(3)).add("three times");
+    }
+```
+
+### 3-13. 호출 순서를 검증 
+```java
+    @Test
+    @DisplayName("호출된 메소드/목객체 순서를 검증")
+    void testVerifyInOrder() {
+        List singleMock = mock(List.class);
+        singleMock.add("was added first");
+        singleMock.add("was added second");
+
+        InOrder inOrder = inOrder(singleMock);
+        inOrder.verify(singleMock).add("was added first");
+        inOrder.verify(singleMock).add("was added second");
+
+        List firstMock = mock(List.class);
+        List secondMock = mock(List.class);
+        firstMock.add("was called first");
+        secondMock.add("was called second");
+
+        InOrder inOrders = inOrder(firstMock, secondMock);
+        inOrders.verify(firstMock).add("was called first");
+        inOrders.verify(secondMock).add("was called second");
+    }
+```
+
+### 3-14. 순차적으로 다른 동작을 테스트
+```java
+    @Test
+    @DisplayName("순차적인 반환값 스터빙")
+    void testConsecutiveCalls() {
+        List mockList = mock(List.class);
+        when(mockList.add(0))
+                .thenThrow(new IllegalArgumentException(""))
+                .thenReturn(true);
+        // 처음 호출은 예외를 던지고, 두 번째는 성공하는 스터빙
+        assertThrows(IllegalArgumentException.class, () -> mockList.add(0));
+        assertTrue(mockList.add(0));
+    }
+```
+
+## 4. 도커와 테스트
+> [테스트 컨테이너](https://www.testcontainers.org)를 이용하여 도커 컨테이너를 단위 테스트에서 활용합니다
+> [컨테이너 모듈](https://www.testcontainers.org/modules/docker_compose/) 참고하여 활용

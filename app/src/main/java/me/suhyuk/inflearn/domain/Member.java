@@ -5,12 +5,12 @@ import lombok.Getter;
 
 @Getter
 public class Member {
-    private int age;
+    private Long memberId;
     private String name;
 
     @Builder
-    public Member(int age, String name) {
-        this.age = age;
+    public Member(Long memberId, String name) {
+        this.memberId = memberId;
         this.name = name;
     }
 }

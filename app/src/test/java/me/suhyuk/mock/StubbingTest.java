@@ -30,7 +30,8 @@ public class StubbingTest {
     void testServiceUsingServices(@Mock MemberService memberService,
                                   @Mock MakerRepository makerRepository) throws MemberNotFoundException, InvalidMemberException {
         Maker maker = Maker.builder().age(10).name("테스트").build();
-        when(memberService.findById(1L)).thenReturn(Optional.of(me.suhyuk.test.domain.Member.builder().name("테스트").build()));
+        Member member = Member.builder().name("테스트").build();
+        when(memberService.findById(1L)).thenReturn(member);
         when(makerRepository.count()).thenReturn(1L);
         when(makerRepository.save(any())).thenReturn(maker);
         // 2개의 서비스를 사용하는 하나의 서비스를 테스트 하기 위해 객체를 생성후 메소드를 호출합니다
