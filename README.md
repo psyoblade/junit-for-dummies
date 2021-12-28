@@ -3,10 +3,6 @@
 > 스프링 2.2+ 버전으로 스프링 부트를 만드는 경우 JUnit5 의존성이 자동으로 추가됩니다.
 > JUnit5는 JUnit4 코드에 대해 하위호환성을 제공하므로, 기존 코드 마이그레이션은 굳이 필요 없습니다
 
-- 목차
-  * [1. JUnit5 소개](#1-JUnit5-소개)
-
-
 ## 1. JUnit5 소개
 * [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/)
 * 컴포넌트 소개
