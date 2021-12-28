@@ -1,4 +1,4 @@
-package me.suhyuk.test.domain;
+package me.suhyuk.inflearn.domain;
 
 import lombok.Builder;
 import lombok.Getter;

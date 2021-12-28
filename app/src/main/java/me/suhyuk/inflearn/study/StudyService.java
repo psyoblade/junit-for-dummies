@@ -1,10 +1,10 @@
-package me.suhyuk.test.study;
+package me.suhyuk.inflearn.study;
 
 import lombok.AllArgsConstructor;
-import me.suhyuk.test.domain.Member;
-import me.suhyuk.test.domain.Study;
-import me.suhyuk.test.domain.StudyStatus;
-import me.suhyuk.test.member.MemberService;
+import me.suhyuk.inflearn.domain.Member;
+import me.suhyuk.inflearn.domain.Study;
+import me.suhyuk.inflearn.domain.StudyStatus;
+import me.suhyuk.inflearn.member.MemberService;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

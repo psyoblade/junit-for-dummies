@@ -1,4 +1,4 @@
-package me.suhyuk.test.study;
+package me.suhyuk.inflearn.study;
 
 import org.springframework.web.bind.annotation.RestController;
 

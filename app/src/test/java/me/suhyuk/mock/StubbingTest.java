@@ -1,8 +1,6 @@
-package me.suhyuk.test;
+package me.suhyuk.mock;
 
 import me.suhyuk.junit.Maker;
-import me.suhyuk.mock.*;
-import me.suhyuk.test.domain.Member;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +29,7 @@ public class StubbingTest {
                                   @Mock MakerRepository makerRepository) throws MemberNotFoundException, InvalidMemberException {
         Maker maker = Maker.builder().age(10).name("테스트").build();
         Member member = Member.builder().name("테스트").build();
-        when(memberService.findById(1L)).thenReturn(member);
+        when(memberService.findById(1L)).thenReturn(Optional.of(member));
         when(makerRepository.count()).thenReturn(1L);
         when(makerRepository.save(any())).thenReturn(maker);
         // 2개의 서비스를 사용하는 하나의 서비스를 테스트 하기 위해 객체를 생성후 메소드를 호출합니다
@@ -58,7 +56,7 @@ public class StubbingTest {
     void testBDD(@Mock MemberService memberService, @Mock MakerRepository makerRepository) throws MemberNotFoundException {
         // Given
         MakerService makerService = new MakerService(memberService, makerRepository);
-        me.suhyuk.test.domain.Member member = Member.builder().name("박수혁").build();
+        Member member = Member.builder().name("박수혁").build();
         Maker maker = Maker.builder().name("메이커").age(10).build();
 
         // When

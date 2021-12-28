@@ -1,7 +1,7 @@
-package me.suhyuk.test.member;
+package me.suhyuk.inflearn.member;
 
-import me.suhyuk.test.domain.Member;
-import me.suhyuk.test.domain.Study;
+import me.suhyuk.inflearn.domain.Member;
+import me.suhyuk.inflearn.domain.Study;
 
 import java.util.Optional;
 

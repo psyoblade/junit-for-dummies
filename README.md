@@ -131,9 +131,9 @@ subprojects {
 }
 ```
 ```bash
-./gradlew test
-./gradlew test fastTest
-./gradlew test slowTest
+./gradlew clean test
+./gradlew clean fastTest
+./gradlew clean slowTest
 ```
 
 ### 2-8. 커스텀 어노테이션 태그
