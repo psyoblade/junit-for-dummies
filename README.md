@@ -3,6 +3,12 @@
 > 스프링 2.2+ 버전으로 스프링 부트를 만드는 경우 JUnit5 의존성이 자동으로 추가됩니다.
 > JUnit5는 JUnit4 코드에 대해 하위호환성을 제공하므로, 기존 코드 마이그레이션은 굳이 필요 없습니다
 
+* 목차
+  - [1. JUnit5 소개](#1-JUnit5-소개)
+  - [2. Assertion 실습](#2-Assertion-실습)
+  - [3. Mockito 실습](#3-Mockito-실습)
+
+
 ## 1. JUnit5 소개
 * [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/)
 * 컴포넌트 소개
@@ -29,7 +35,7 @@
 * @DisplayName : 한글 뿐만 아니라 이모지(🎉)도 추가할 수 있습니다
 
 
-## 2. Assertion 함수 이해하기
+## 2. Assertion 실습
 
 ### 2-1. Java8 Supplier<String> 활용한 Assertion
 ```java
@@ -175,7 +181,7 @@ public @interface FastTest { // FastTest 어노테이션은 @Test 와 @Tag 2개�
 ```
 
 
-## 3. Mockito
+## 3. Mockito 실습
 > Mock: 진짜 객체와 비슷하게 동작하지만 프로그래머가 그 객체의 행동을 관리하는 객체
 > Mockito : Mock 객체를 쉽게 만들고 관리하고 검증할 수 있는 방법을 제공합니다
 > 데이터베이스 혹은 외부 API 연동을 하는 경우 내부 구현을 모르고, 단위 테스트 수준에서 연동하는 것은 번거로운 일이므로, 이럴 때에 활용합니다
