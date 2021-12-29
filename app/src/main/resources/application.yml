@@ -1,0 +1,13 @@
+spring:
+  jpa.hibernate.ddl-auto: update
+
+---
+profiles: live
+server:
+  port: 8888
+spring:
+  jpa.hibernate.ddl-auto: update
+  datasource:
+    url: jdbc:postgresql://localhost:5432/study
+    username: study
+    password: study
